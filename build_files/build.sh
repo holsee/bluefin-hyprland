@@ -47,6 +47,13 @@ json.dump(d, open(p, "w"), indent=4)
 print("policy.json: added ghcr.io/holsee/bluefin-hyprland")
 PY
 
+### bootc hygiene — /var and /run must be empty in the image.
+# blueman's RPM ships /var/lib/blueman; it is recreated at boot by
+# system_files/usr/lib/tmpfiles.d/bluefin-hyprland.conf instead.
+rm -rf /var/lib/blueman
+# dnf5 leaves repo metadata, a lock, and a runtime dir behind.
+rm -rf /var/lib/dnf /run/dnf
+
 # Sanity: the session entries GDM will offer must exist.
 test -f /usr/share/wayland-sessions/hyprland.desktop
 test -f /usr/share/wayland-sessions/hyprland-uwsm.desktop
