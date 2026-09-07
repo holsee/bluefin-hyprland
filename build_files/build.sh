@@ -32,6 +32,28 @@ $DNF \
     brightnessctl playerctl pavucontrol blueman \
     papirus-icon-theme qt6ct
 
+### Snatch Studio (snas): screen capture and post-processing for this desktop.
+# Runtime packages from Fedora; the binaries from the latest GitHub release
+# of holsee/snatchstudio (private, so a token is needed; the secret is
+# optional and the stage is skipped without it).
+$DNF wf-recorder gtk4-layer-shell webkit2gtk4.1 libxkbcommon
+if [ -s /run/secrets/github_token ]; then
+    token=$(cat /run/secrets/github_token)
+    api="https://api.github.com/repos/holsee/snatchstudio/releases/latest"
+    asset_url=$(curl -fsSL -H "Authorization: Bearer $token" -H "Accept: application/vnd.github+json" "$api" \
+        | python3 -c 'import json,sys; a=[x for x in json.load(sys.stdin)["assets"] if x["name"].endswith(".tar.gz")]; print(a[0]["url"] if a else "")')
+    if [ -n "$asset_url" ]; then
+        curl -fsSL -H "Authorization: Bearer $token" -H "Accept: application/octet-stream" "$asset_url" -o /tmp/snas.tar.gz
+        mkdir -p /tmp/snas && tar -xzf /tmp/snas.tar.gz -C /tmp/snas --strip-components=1
+        PREFIX=/usr bash /tmp/snas/contrib/packaging/install.sh /tmp/snas
+        rm -rf /tmp/snas /tmp/snas.tar.gz
+    else
+        echo "build.sh: no snatchstudio release asset found; skipping snas"
+    fi
+else
+    echo "build.sh: no github_token secret; skipping snas"
+fi
+
 ### Trust this image's own cosign key, so `bootc switch` / rpm-ostree rebase
 ### can verify signatures rather than falling through to the catch-all policy.
 python3 - <<'PY'

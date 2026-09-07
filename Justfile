@@ -122,6 +122,10 @@ build $target_image=image_name $tag=default_tag:
     LABELS+=("--label" "org.opencontainers.image.vendor={{ repo_organization }}")
 
     # This actually builds the image!
+    # The snas stage in build.sh downloads a private release with this token.
+    if [ -n "${GITHUB_TOKEN:-}" ]; then
+        BUILD_ARGS+=(--secret "id=github_token,env=GITHUB_TOKEN")
+    fi
     PODMAN_BUILD_ARGS=("${BUILD_ARGS[@]}" "${LABELS[@]}" --pull=newer --tag "${target_image}:${tag}" --file Containerfile)
 
     podman build "${PODMAN_BUILD_ARGS[@]}" .

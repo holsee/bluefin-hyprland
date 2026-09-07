@@ -11,10 +11,13 @@ COPY system_files /system_files
 # tracking image. Pin to @sha256:... instead if you want to gate base bumps.
 FROM ghcr.io/ublue-os/bluefin-nvidia-open:stable
 
+# `github_token` (optional) lets build.sh download the latest snatchstudio
+# release, a private repo; without it the snas stage is skipped.
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
+    --mount=type=secret,id=github_token,required=false \
     /ctx/build.sh
 
 # Verify the result is a valid bootc image.

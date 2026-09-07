@@ -108,3 +108,12 @@ Built from [ublue-os/image-template](https://github.com/ublue-os/image-template)
 ## License
 
 Apache-2.0, as inherited from the template.
+
+## Snatch Studio
+
+The image carries `snas`, `snasd`, `snas-app` and `snas-countdown` from the
+latest release of [holsee/snatchstudio](https://github.com/holsee/snatchstudio)
+(private). The build needs a `SNAS_TOKEN` repository secret, a PAT with
+read access to that repo's releases; without it the stage is skipped and the
+image still builds. Runtime packages (`wf-recorder`, `gtk4-layer-shell`,
+`webkit2gtk4.1`, `libxkbcommon`) are layered either way.

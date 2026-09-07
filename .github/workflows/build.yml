@@ -69,6 +69,10 @@ jobs:
       # This actually builds the container image
       - name: Build Image
         id: build-image
+        env:
+          # A PAT with read access to holsee/snatchstudio releases (private);
+          # optional, the snas stage is skipped without it.
+          GITHUB_TOKEN: ${{ secrets.SNAS_TOKEN }}
         run: |
           just build \
             ${IMAGE_NAME} \
