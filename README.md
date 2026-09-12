@@ -27,8 +27,15 @@ Everything a working Hyprland session needs that Bluefin doesn't already carry:
 | Launcher, notifications, power menu | `fuzzel`, `mako`, `wlogout` | Fedora |
 | Hardware / audio | `brightnessctl`, `playerctl`, `pavucontrol`, `blueman`, `grim`, `slurp` | Fedora |
 | Look | `papirus-icon-theme`, `qt6ct` | Fedora |
+| Passwords, SSH agent | `1password`, `1password-cli` | 1Password repo |
 
 Both COPRs are enabled only for the duration of the build and left **disabled** in the image, so they don't influence anything you layer later.
+
+**1Password** is the RPM rather than the Flatpak because only the RPM has the SSH agent, browser integration and CLI integration. Three things make it work on bootc, all in this repo:
+
+- It installs under `/opt`, which is `/var/opt` and not part of the image, so `build.sh` moves it to `/usr/lib/1Password` and `tmpfiles.d` links `/opt/1Password` back at boot.
+- Its setgid helpers belong to the `onepassword`, `onepassword-cli` and `onepassword-mcp` groups. Groups added to the image's `/etc/group` never reach an existing system, so they are declared with fixed GIDs in `sysusers.d` and created at boot.
+- Its polkit policy normally lists the machine's users at install time; the build has none, so `build.sh` fills in `unix-user:holsee`. Change it if you fork this.
 
 **Not in it, deliberately:**
 

@@ -32,6 +32,33 @@ $DNF \
     brightnessctl playerctl pavucontrol blueman \
     papirus-icon-theme qt6ct
 
+### 1Password app + CLI — as RPMs, because the Flatpak has no SSH agent,
+### browser integration or CLI integration.
+# The app installs under /opt, which is a symlink to /var/opt and so not part
+# of the image: give dnf a real /opt, move the app to /usr/lib/1Password, and
+# tmpfiles.d links it back at boot.
+# The scriptlets groupadd onepassword{,-cli,-mcp} only if missing; create them
+# first from sysusers.d so file ownership matches the GIDs created at boot.
+systemd-sysusers /usr/lib/sysusers.d/1password.conf
+cat > /etc/yum.repos.d/1password.repo <<'EOF'
+[1password]
+name=1Password Stable Channel
+baseurl=https://downloads.1password.com/linux/rpm/stable/$basearch
+enabled=1
+gpgcheck=1
+gpgkey=https://downloads.1password.com/linux/keys/1password.asc
+EOF
+rm /opt && mkdir /opt
+$DNF 1password 1password-cli
+mv /opt/1Password /usr/lib/1Password
+rmdir /opt && ln -s /var/opt /opt
+# The scriptlet writes this repo file back, enabled; leave it disabled like the COPRs.
+sed -i 's/^enabled=1/enabled=0/' /etc/yum.repos.d/1password.repo
+# The polkit policy's owners (who may ask polkit on the SSH agent's and CLI's
+# behalf) are filled from /etc/passwd at install, which is empty in a build.
+sed 's/\${POLICY_OWNERS}/unix-user:holsee/' /usr/lib/1Password/com.1password.1Password.policy.tpl \
+    > /usr/share/polkit-1/actions/com.1password.1Password.policy
+
 ### Snatch Studio (snas): screen capture and post-processing for this desktop.
 # Runtime packages from Fedora; the binaries from the latest GitHub release
 # of holsee/snatchstudio (private, so a token is needed; the secret is
@@ -79,4 +106,8 @@ rm -rf /var/lib/dnf /run/dnf
 # Sanity: the session entries GDM will offer must exist.
 test -f /usr/share/wayland-sessions/hyprland.desktop
 test -f /usr/share/wayland-sessions/hyprland-uwsm.desktop
+# ...and 1Password's setgid helpers must carry the GIDs sysusers.d creates.
+test "$(stat -c %g /usr/lib/1Password/1Password-BrowserSupport)" = 880
+test "$(stat -c %g /usr/bin/op)" = 881
+grep -q 'unix-user:holsee' /usr/share/polkit-1/actions/com.1password.1Password.policy
 echo "build.sh: done"
